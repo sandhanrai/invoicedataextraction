@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Invoice AI System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+        <p class="text-muted">Key performance indicators and insights from your invoice processing system</p>
+
+        <!-- KPI Cards -->
+        <div class="row mb-4" id="kpiCards">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-invoice fa-2x text-primary mb-2"></i>
+                        <h4 id="totalInvoices">-</h4>
+                        <p class="text-muted mb-0">Total Invoices</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h4 id="totalAnomalies">-</h4>
+                        <p class="text-muted mb-0">Anomalies Detected</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                        <h4 id="totalValue">$-</h4>
+                        <p class="text-muted mb-0">Total Value</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                        <h4 id="todayProcessed">-</h4>
+                        <p class="text-muted mb-0">Processed Today</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <!-- Time Series Chart -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Invoice Processing Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="timeSeriesChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Vendors Chart -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Top Vendors by Value</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="vendorsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="row">
+            <!-- Extraction Methods -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Extraction Methods Used</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="methodsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Status -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Processing Status Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="statusChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Export Analytics Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Download comprehensive analytics data for external analysis or reporting.</p>
+                        <button class="btn btn-outline-primary" onclick="exportAnalytics()">
+                            <i class="fas fa-download"></i> Export Analytics JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+let kpiData = {};
+let timeSeriesData = [];
+let vendorsData = [];
+let methodsData = {};
+let statusData = {};
+
+async function loadAnalytics() {
+    try {
+        // Load KPIs
+        const kpiResponse = await fetch('/api/metrics/kpis', {
+            headers: { 'X-API-KEY': 'dev-key-12345' }
+        });
+        kpiData = await kpiResponse.json();
+
+        // Load time series
+        const timeResponse = await fetch('/api/metrics/time_series', {
+            headers: { 'X-API-KEY': 'dev-key-12345' }
+        });
+        timeSeriesData = await timeResponse.json();
+
+        // Load top vendors
+        const vendorsResponse = await fetch('/api/metrics/top_vendors', {
+            headers: { 'X-API-KEY': 'dev-key-12345' }
+        });
+        vendorsData = await vendorsResponse.json();
+
+        // Update UI
+        updateKPIs();
+        updateCharts();
+
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showError('Failed to load analytics data');
+    }
+}
+
+function updateKPIs() {
+    document.getElementById('totalInvoices').textContent = kpiData.total_invoices || 0;
+    document.getElementById('totalAnomalies').textContent = kpiData.total_anomalies || 0;
+    document.getElementById('totalValue').textContent = kpiData.total_value ? `$${kpiData.total_value.toLocaleString()}` : '$0';
+    document.getElementById('todayProcessed').textContent = kpiData.today_processed || 0;
+}
+
+function updateCharts() {
+    // Time series chart
+    if (timeSeriesData.length > 0) {
+        const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeSeriesData.map(d => d.period),
+                datasets: [{
+                    label: 'Invoices Processed',
+                    data: timeSeriesData.map(d => d.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Vendors chart
+    if (vendorsData.length > 0) {
+        const ctx = document.getElementById('vendorsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: vendorsData.map(v => v.vendor || 'Unknown'),
+                datasets: [{
+                    data: vendorsData.map(v => v.total_value),
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)',
+                        'rgb(153, 102, 255)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    }
+
+    // Methods chart (placeholder - would need additional API endpoint)
+    const methodsCtx = document.getElementById('methodsChart').getContext('2d');
+    new Chart(methodsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['OCR', 'Regex', 'AI (LayoutLM)'],
+            datasets: [{
+                label: 'Usage Count',
+                data: [85, 75, 90], // Placeholder data
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Status chart (placeholder)
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Processed', 'Pending', 'Failed'],
+            datasets: [{
+                data: [90, 5, 5], // Placeholder data
+                backgroundColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(255, 205, 86)',
+                    'rgb(255, 99, 132)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+function exportAnalytics() {
+    const data = {
+        kpis: kpiData,
+        time_series: timeSeriesData,
+        top_vendors: vendorsData,
+        exported_at: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics_export_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function showError(message) {
+    // Simple error display - could be enhanced
+    alert(message);
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', loadAnalytics);
+</script>
+{% endblock %}

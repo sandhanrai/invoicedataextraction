@@ -1,0 +1,9 @@
+flask
+google-generativeai
+sqlalchemy
+pdf2image
+pillow
+python-dotenv
+gunicorn
+pytest
+requests

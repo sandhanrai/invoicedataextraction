@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.id }} - Invoice AI Extraction System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/invoices">Invoices</a></li>
+                <li class="breadcrumb-item active">Invoice {{ invoice.id }}</li>
+            </ol>
+        </nav>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Invoice Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Basic Information</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Filename:</strong></td>
+                                <td>{{ invoice.filename }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vendor:</strong></td>
+                                <td>{{ invoice.vendor or 'Not extracted' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Invoice No:</strong></td>
+                                <td>{{ invoice.invoice_no or 'Not extracted' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date:</strong></td>
+                                <td>{{ invoice.date or 'Not extracted' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Currency:</strong></td>
+                                <td>{{ invoice.currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Financial Summary</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Subtotal:</strong></td>
+                                <td>${{ "%.2f"|format(invoice.subtotal or 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tax:</strong></td>
+                                <td>${{ "%.2f"|format(invoice.tax or 0) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total:</strong></td>
+                                <td><strong>${{ "%.2f"|format(invoice.total or 0) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if invoice.status == 'processed' else 'warning' }}">
+                                        {{ invoice.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if invoice.line_items %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Line Items</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in invoice.line_items %}
+                            <tr>
+                                <td>{{ item.description or 'N/A' }}</td>
+                                <td>{{ item.qty or 'N/A' }}</td>
+                                <td>${{ "%.2f"|format(item.unit_price or 0) }}</td>
+                                <td>${{ "%.2f"|format(item.line_total or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if invoice.extractions %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Extraction Results</h5>
+            </div>
+            <div class="card-body">
+                {% for extraction in invoice.extractions %}
+                <div class="mb-3">
+                    <h6>Method: {{ extraction.method.value|upper }} (Confidence: {{ "%.2f"|format(extraction.confidence or 0) }})</h6>
+                    <pre class="bg-light p-2 rounded"><code>{{ extraction.json_result }}</code></pre>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if invoice.anomalies %}
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5>Anomalies Detected</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for anomaly in invoice.anomalies %}
+                    <li class="list-group-item">
+                        <strong>{{ anomaly.field }}:</strong> {{ anomaly.reason }}
+                        {% if anomaly.score %}
+                        <span class="badge bg-danger float-end">{{ "%.2f"|format(anomaly.score) }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

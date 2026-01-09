@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Invoice AI Extraction System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>API Documentation</h2>
+        <p class="text-muted">Complete REST API reference for the Invoice AI Extraction System</p>
+
+        <div class="accordion" id="apiAccordion">
+            <!-- Extract Invoice -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                        POST /api/extract_invoice - Extract Invoice Data
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#apiAccordion">
+                    <div class="accordion-body">
+                        <p>Upload an invoice image or PDF and extract structured data using AI.</p>
+                        <h6>Parameters:</h6>
+                        <ul>
+                            <li><code>file</code> (multipart/form-data): Invoice file (PNG, JPG, JPEG, PDF)</li>
+                        </ul>
+                        <h6>Response:</h6>
+                        <pre><code>{
+  "invoice_id": 123,
+  "status": "success",
+  "data": {
+    "vendor": "ABC Corp",
+    "invoice_no": "INV-001",
+    "date": "2024-01-15",
+    "total": 1500.00,
+    "line_items": [...]
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Invoices -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                        GET /api/invoices - List Invoices
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#apiAccordion">
+                    <div class="accordion-body">
+                        <p>Get paginated list of processed invoices.</p>
+                        <h6>Query Parameters:</h6>
+                        <ul>
+                            <li><code>page</code> (optional): Page number (default: 1)</li>
+                            <li><code>per_page</code> (optional): Items per page (default: 20)</li>
+                        </ul>
+                        <h6>Response:</h6>
+                        <pre><code>{
+  "invoices": [...],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 150,
+    "pages": 8
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Get Invoice -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                        GET /api/invoices/{id} - Get Invoice Details
+                    </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#apiAccordion">
+                    <div class="accordion-body">
+                        <p>Get detailed information about a specific invoice.</p>
+                        <h6>Response:</h6>
+                        <pre><code>{
+  "id": 123,
+  "filename": "invoice.pdf",
+  "vendor": "ABC Corp",
+  "invoice_no": "INV-001",
+  "total": 1500.00,
+  "line_items": [...],
+  "extractions": [...],
+  "anomalies": [...]
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFour">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                        GET /api/metrics/kpis - Get KPIs
+                    </button>
+                </h2>
+                <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#apiAccordion">
+                    <div class="accordion-body">
+                        <p>Get system-wide key performance indicators.</p>
+                        <h6>Response:</h6>
+                        <pre><code>{
+  "total_invoices": 150,
+  "total_value": 250000.00,
+  "avg_processing_time": 3.2,
+  "success_rate": 95.5
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export CSV -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFive">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive">
+                        GET /api/export/csv - Export CSV
+                    </button>
+                </h2>
+                <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#apiAccordion">
+                    <div class="accordion-body">
+                        <p>Download processed invoice data as CSV file.</p>
+                        <h6>Query Parameters:</h6>
+                        <ul>
+                            <li><code>start_date</code> (optional): Filter by start date (YYYY-MM-DD)</li>
+                            <li><code>end_date</code> (optional): Filter by end date (YYYY-MM-DD)</li>
+                            <li><code>vendor</code> (optional): Filter by vendor name</li>
+                        </ul>
+                        <p><em>Returns CSV file download</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}AI Invoice Extraction{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-brain"></i> AI-Powered Invoice Extraction
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Upload Form -->
+                <form method="POST" enctype="multipart/form-data" class="mb-4">
+                    <div class="mb-3">
+                        <label for="invoice" class="form-label">
+                            <i class="fas fa-upload"></i> Upload Invoice Image
+                        </label>
+                        <input type="file" class="form-control" id="invoice" name="invoice"
+                               accept=".png,.jpg,.jpeg,.tiff,.bmp,.pdf" required>
+                        <div class="form-text">
+                            Supported formats: PNG, JPG, JPEG, TIFF, BMP, PDF (max 16MB)
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-cogs"></i> Process with AI
+                    </button>
+                </form>
+
+                <!-- Processing Indicator -->
+                <div id="processingIndicator" class="d-none">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <p class="mt-2">Processing invoice with AI... This may take a few moments.</p>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                {% if result %}
+                <div id="resultsSection">
+                    <hr>
+                    <h5 class="text-success">
+                        <i class="fas fa-check-circle"></i> Processing Complete
+                    </h5>
+
+                    <!-- Processing Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-clock"></i> Processing Time
+                                    </h6>
+                                    <p class="card-text h4 text-primary">
+                                        {{ "%.2f"|format(result.processing_time_seconds) }}s
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-brain"></i> AI Entities Found
+                                    </h6>
+                                    <p class="card-text h4 text-info">
+                                        {{ result.ai_extraction.num_entities | default(0) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OCR Text Preview -->
+                    <div class="mb-4">
+                        <h6>
+                            <i class="fas fa-file-alt"></i> OCR Text Preview
+                            <small class="text-muted">({{ result.ocr_text | length }} characters)</small>
+                        </h6>
+                        <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                            <pre class="mb-0 small">{{ result.ocr_text[:500] }}{% if result.ocr_text | length > 500 %}...{% endif %}</pre>
+                        </div>
+                    </div>
+
+                    <!-- Extraction Results -->
+                    <div class="row">
+                        <!-- AI Extraction -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-robot"></i> AI Extraction Results
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Field</th>
+                                            <th>Value</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for field, data in result.ai_extraction.schema.items() %}
+                                            {% if field != '_validation' and data.value %}
+                                            <tr>
+                                                <td><strong>{{ field.replace('_', ' ') | title }}</strong></td>
+                                                <td>{{ data.value }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if data.confidence > 0.8 else 'warning' if data.confidence > 0.5 else 'danger' }}">
+                                                        {{ "%.1f"|format(data.confidence * 100) }}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Regex Extraction -->
+                        <div class="col-md-6">
+                            <h6 class="text-secondary">
+                                <i class="fas fa-search"></i> Regex Extraction Results
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Field</th>
+                                            <th>Value</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for field, data in result.regex_extraction.items() %}
+                                            {% if data.value %}
+                                            <tr>
+                                                <td><strong>{{ field.replace('_', ' ') | title }}</strong></td>
+                                                <td>{{ data.value }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if data.confidence > 0.8 else 'warning' if data.confidence > 0.5 else 'danger' }}">
+                                                        {{ "%.1f"|format(data.confidence * 100) }}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Metrics -->
+                    {% if result.comparison %}
+                    <div class="mt-4">
+                        <h6 class="text-info">
+                            <i class="fas fa-balance-scale"></i> Method Comparison
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-success">
+                                            {{ "%.1f"|format(result.comparison.overall_metrics.data_completeness * 100) }}%
+                                        </h5>
+                                        <p class="card-text small">Data Completeness</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-info">
+                                            {{ "%.1f"|format(result.comparison.overall_metrics.agreement_rate * 100) }}%
+                                        </h5>
+                                        <p class="card-text small">Method Agreement</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">
+                                            {{ result.comparison.overall_metrics.fields_with_data }}/{{ result.comparison.overall_metrics.total_fields }}
+                                        </h5>
+                                        <p class="card-text small">Fields Extracted</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if result.comparison.recommendations %}
+                        <div class="alert alert-info mt-3">
+                            <strong>Recommendation:</strong> {{ result.comparison.recommendations[0] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Errors (if any) -->
+                    {% if result.errors %}
+                    <div class="mt-4">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Processing Warnings</h6>
+                            <ul class="mb-0">
+                                {% for error in result.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('submitBtn').addEventListener('click', function() {
+    document.getElementById('processingIndicator').classList.remove('d-none');
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+});
+
+// Auto-hide processing indicator when page loads (for results)
+document.addEventListener('DOMContentLoaded', function() {
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+        document.getElementById('processingIndicator').classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}

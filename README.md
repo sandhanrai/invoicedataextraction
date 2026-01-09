@@ -1,195 +1,261 @@
-## Project Overview
+# AI Invoice Data Extraction System using Gemini Vision
 
-This project automates the extraction and validation of structured data from unstructured invoices (PDFs, images) in multiple languages using AI techniques including OCR, NLP, and machine learning. The system aims to process invoices in English and Hindi, extracting key fields like vendor name, invoice number, date, line items, totals, and taxes, while performing validation and anomaly detection.
+A Flask-based web application that extracts structured data from invoice images and PDFs using **Google Gemini 2.5 Flash (multimodal vision model)**. The system converts unstructured invoice documents into structured, queryable data and provides analytics and export functionality.
 
-## Phase 1 Objectives (Days 1-5)
+---
 
-- Set up project structure and environment
-- Implement basic OCR pipeline with Tesseract and EasyOCR
-- Create preprocessing utilities for image enhancement
-- Build minimal Streamlit UI prototype
-- Develop unit tests for OCR functionality
-- Produce working OCR proof-of-concept
+## Features
 
-## System Dependencies
+* 📄 **Invoice Upload**
 
-### Ubuntu/Debian
+  * Supports PDF, PNG, JPG, and JPEG files
+* 🤖 **AI-Powered Extraction**
 
-```bash
-sudo apt update
-sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin
+  * Uses Google Gemini 2.5 Flash Vision for document understanding
+* 🧾 **Structured Data Output**
+
+  * Extracts invoice number, vendor, date, totals, tax, and line items
+* 💾 **Database Storage**
+
+  * Stores invoices and line items using SQLAlchemy (SQLite)
+* 📊 **Analytics Dashboard**
+
+  * Vendor spend analysis and invoice KPIs
+* 📤 **CSV Export**
+
+  * Export extracted invoice data to CSV format
+* 🔌 **REST API**
+
+  * API endpoints for programmatic invoice extraction and retrieval
+
+---
+
+## Tech Stack
+
+| Layer               | Technology                                    |
+| ------------------- | --------------------------------------------- |
+| Backend             | Flask, SQLAlchemy                             |
+| AI / ML             | Google Gemini 2.5 Flash (google-generativeai) |
+| Document Processing | Pillow, pdf2image                             |
+| Frontend            | HTML, Bootstrap 5, Chart.js                   |
+| Database            | SQLite (default)                              |
+| Deployment          | Local Flask development server                |
+
+---
+
+## How It Works (High-Level Flow)
+
+1. User uploads an invoice (PDF or image)
+2. PDF pages are converted to images (if applicable)
+3. Image is sent to **Gemini 2.5 Flash Vision**
+4. Gemini performs multimodal document understanding
+5. Structured JSON is returned
+6. Data is validated and stored in the database
+7. Invoice is displayed, analyzed, and exportable
+
+---
+
+## Project Structure
+
+```
+.
+├── config/
+│   └── settings.py            # Environment and app configuration
+├── data/                      # Uploaded invoice files
+├── exports/                   # CSV exports
+├── invoices.db                # SQLite database
+├── src/
+│   ├── pipeline/
+│   │   └── gemini_extraction.py   # Gemini Vision extraction logic
+│   ├── db/
+│   │   ├── models.py              # SQLAlchemy models
+│   │   ├── crud.py                # Database operations
+│   │   └── session.py             # DB session management
+│   ├── analytics/
+│   │   └── aggregations.py        # KPI calculations
+│   └── ui/
+│       └── flask_app/
+│           ├── app.py             # Flask application
+│           ├── api.py             # REST API endpoints
+│           ├── templates/         # Jinja2 templates
+│           └── static/            # CSS & JS assets
+├── requirements.txt
+├── .env.example
+├── README.md
+└── test_invoice.png
 ```
 
-### macOS
+---
+
+## Setup Instructions
+
+### 1. Clone Repository
 
 ```bash
-brew install tesseract
+git clone https://github.com/your-username/ai-invoice-extractor.git
+cd ai-invoice-extractor
 ```
 
-### Windows
-
-Download and install Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki
-Add to PATH and install language packs for English and Hindi.
-
-## Python Environment Setup
+### 2. Create Virtual Environment
 
 ```bash
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-## How to Run OCR Test
-
-1. Place sample invoice images in `data/raw_invoices/` (e.g., invoice1.jpg, invoice2.png)
-2. Run: `python src/ocr/ocr_test.py data/raw_invoices/invoice1.jpg`
-3. Expected output: OCR text from both Tesseract and EasyOCR, saved to `outputs/ocr_texts.json`
-
-## Project Structure
-
-```
-/project-root
-  /data/raw_invoices      # Input invoice images/PDFs
-  /data/processed         # Processed images
-  /notebooks              # Jupyter notebooks for experimentation
-  /src
-    /ocr                  # OCR-related code
-    /preprocessing        # Image preprocessing utilities
-    /models               # ML models and training code
-    /ui                   # Streamlit UI components
-  /outputs                # Extracted data and results
-  /docs                   # Documentation
-```
-
-## Usage
-
-1. Install system dependencies
-2. Set up Python virtual environment
-3. Install Python packages
-4. Run OCR test on sample invoice
-5. # Extend with additional features in subsequent phases
-
-# AI-Based Multi-Language Invoice Data Extraction and Validation System
-
-## Project Overview
-
-This project automates the extraction and validation of structured data from unstructured invoices (PDFs, images) using Google Gemini Vision API and Flask. The system processes invoices in multiple languages, extracting key fields like vendor name, invoice number, date, line items, totals, and taxes, while performing validation and anomaly detection.
-
-## Architecture
-
-The system uses a modern stack:
-
-- **AI Extraction**: Google Gemini Vision API for document understanding
-- **Web Framework**: Flask with REST API and Bootstrap UI
-- **Database**: SQLAlchemy ORM with SQLite (dev) / PostgreSQL (prod)
-- **Image Processing**: pdf2image + Pillow for PDF-to-image conversion
-
-## Quick Start
-
-### 1. Environment Setup
+### 4. Configure Environment Variables
 
 ```bash
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Configuration
-
-```bash
-# Copy environment template
 cp .env.example .env
-
-# Edit .env with your settings
-# Required: GEMINI_API_KEY from Google AI Studio
 ```
 
-### 3. Run the Application
+Edit `.env`:
+
+```
+SECRET_KEY=your-secret-key
+GEMINI_API_KEY=your-gemini-api-key
+DATABASE_URL=sqlite:///invoices.db
+```
+
+> Get your API key from **Google AI Studio**
+
+---
+
+### 5. Run the Application
 
 ```bash
-# Initialize database
-export FLASK_APP=src/ui/flask_app/app.py
-flask shell -c "from src.db.session import init_db; init_db()"
-
-# Run development server
-flask run --host=0.0.0.0 --port=5000
+flask run
 ```
 
-### 4. Test the API
+Open:
+📍 `http://127.0.0.1:5000`
 
-```bash
-# Health check
-curl http://localhost:5000/health
-
-# Upload invoice (replace with actual file)
-curl -X POST -F "file=@sample_invoice.pdf" http://localhost:5000/api/extract_invoice
-```
-
-## Project Structure
-
-```
-/project-root
-  /data
-    /raw_invoices/        # Input invoice files
-    /processed/           # Processed data
-    /testing_data/        # Test datasets
-  /src
-    /pipeline/            # Gemini extraction pipeline
-    /ui/flask_app/        # Flask application
-      /templates/         # Jinja2 templates
-      /static/            # CSS/JS assets
-    /db/                  # Database models and CRUD
-    /analytics/           # KPI calculations
-    /config/              # Settings and logging
-    /exports/             # CSV export utilities
-    /tests/               # Unit tests
-  /docs/                  # Documentation
-  /logs/                  # Application logs
-```
-
-## API Endpoints
-
-- `POST /api/extract_invoice` - Upload and process invoice
-- `GET /api/invoices` - List processed invoices
-- `GET /api/invoices/{id}` - Get invoice details
-- `GET /api/metrics/kpis` - System KPIs
-- `GET /api/export/csv` - Export data as CSV
+---
 
 ## Web Interface
 
-- `/` - Home page
-- `/invoices` - Invoice list with pagination
-- `/invoice/{id}` - Detailed invoice view
-- `/analytics` - Dashboard with charts
-- `/api-docs` - Interactive API documentation
+* **Upload** – Upload invoices for extraction
+* **Invoices** – View extracted invoices and line items
+* **Analytics** – Vendor-wise and invoice-level insights
+* **Export** – Download invoice data as CSV
 
-## Key Features
+---
 
-- **AI-Powered Extraction**: Google Gemini Vision API for accurate data extraction
-- **Multi-format Support**: Handles PDFs, PNG, JPG, JPEG files
-- **Validation & Anomalies**: Automatic data validation and anomaly detection
-- **Analytics Dashboard**: Real-time KPIs and visualizations
-- **REST API**: Full CRUD operations with JSON responses
-- **Export Capabilities**: CSV download with filtering
-- **Responsive UI**: Bootstrap-based web interface
+## REST API Endpoints
 
-## Development
+### Extract Invoice
 
-```bash
-# Run tests
-pytest src/tests/
-
-# Format code
-black src/
-isort src/
-
-# Type checking
-mypy src/
+```http
+POST /api/extract_invoice
+Content-Type: multipart/form-data
 ```
 
-## Deployment
+**Response (Example)**
 
-See `docs/deploy.md` for Docker and production deployment instructions.
+```json
+{
+  "invoice_no": "2577",
+  "vendor": "INV24.COM",
+  "date": "2024-02-27",
+  "total": 1070.0,
+  "tax": 83.82,
+  "line_items": [
+    {
+      "description": "My products",
+      "quantity": 3,
+      "unit_price": 92.17,
+      "line_total": 276.5
+    }
+  ]
+}
+```
+
+---
+
+### Get All Invoices
+
+```http
+GET /api/invoices
+```
+
+---
+
+### Get Invoice by ID
+
+```http
+GET /api/invoices/{id}
+```
+
+---
+
+### Get Analytics KPIs
+
+```http
+GET /api/metrics/kpis
+```
+
+---
+
+## CSV Export Format
+
+```
+Field,Value
+Invoice No,2577
+Vendor,INV24.COM
+Date,2024-02-27
+Total,1070.00
+Tax,83.82
+
+Line Items
+Description,Quantity,Unit Price,Line Total
+My products,3,92.17,276.50
+```
+
+---
+
+## AI Model Details
+
+* **Model**: Gemini 2.5 Flash
+* **Type**: Multimodal (Vision + Language)
+* **Role**:
+
+  * OCR + layout understanding
+  * Semantic field extraction
+  * Table and line item parsing
+* **Why Flash**:
+
+  * Faster inference
+  * Lower cost
+  * Ideal for document processing
+
+---
+
+## Data Science Relevance
+
+This project demonstrates:
+
+* Document AI & multimodal ML
+* Unstructured → structured data pipelines
+* Real-world data ingestion
+* Feature extraction & aggregation
+* Practical analytics and reporting
+* End-to-end ML application deployment
+
+---
+
+## Limitations & Future Work
+
+* No authentication yet
+* No confidence scoring
+* No multi-page invoice aggregation
+* No model fine-tuning
+* SQLite only (can be extended)
+
+---
+
